@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shrine/presentation/widgets/cta_button.dart';
 import 'package:shrine/presentation/widgets/text_field.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -110,6 +111,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         } else {
           //upsert data to the table
           insertUserData();
+
+          //to store registered team name in shared preference
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('team_name', groupNameController.text);
 
           // Successful registration, show success message and switch to sign-in
           Navigator.of(context).pop();

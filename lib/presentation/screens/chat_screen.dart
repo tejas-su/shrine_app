@@ -1,26 +1,31 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shrine/presentation/screens/imports.dart';
+import 'package:shrine/presentation/themes/theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../screens/imports.dart';
 
-class CommentsSection extends StatefulWidget {
+import '../helper_functions/helper_functions.dart';
+
+class ChatScreen extends StatefulWidget {
   final SupabaseClient supabase;
-
-  const CommentsSection({
-    super.key,
-    required this.supabase,
-  });
+  const ChatScreen({super.key, required this.supabase});
 
   @override
-  State<CommentsSection> createState() => _CommentsSectionState();
+  State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _CommentsSectionState extends State<CommentsSection> {
-  //retrieve the selected project name
-  final Storage localStorage = window.localStorage;
+class _ChatScreenState extends State<ChatScreen> {
+  @override
+  void initState() {
+    super.initState();
+    retrieveSelectedProject();
+  }
 
   final TextEditingController _textController = TextEditingController();
   // final List<String> _messages = [];
+  String selectedprojectname = '';
 
   //user images
   List images = [
@@ -30,23 +35,28 @@ class _CommentsSectionState extends State<CommentsSection> {
     "assets/avatars/man (4).png",
     "assets/avatars/man (5).png",
   ];
+  retrieveSelectedProject() async {
+    //to retrieve selected project name from shared preference
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      selectedprojectname = prefs.getString('selected_project_name').toString();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    var obj = HelperFunctions();
-    String projectName = localStorage['projectName'].toString();
-    //first project name if nothing is selected
-    String firstProject = localStorage['firstProject'].toString();
+    double width = MediaQuery.of(context).size.width;
+
     //date current
     DateTime now = DateTime.now();
     //formatted date in dd-mm-yyyy
     String formattedDate = DateFormat('dd-MM-yyyy').format(now);
+    var obj = HelperFunctions();
 
     void clearTextField() {
       _textController.clear();
     }
 
-    //error dialog
     void showErrorDialog(
       BuildContext context,
       String title,
@@ -69,14 +79,16 @@ class _CommentsSectionState extends State<CommentsSection> {
 
     void getChatsAndRefresh() async {
       setState(() {
-        obj.getChats(context, widget.supabase, projectName);
+        obj.getChats(context, widget.supabase, selectedprojectname);
       });
     }
 
-    //add the chat to the db
-    void _handleSubmitted(String message) async {
-      print('Chat screen project name: $projectName $firstProject');
+    void _handleSubmitted(
+        {required String message, required String projectName}) async {
       try {
+        //Retrieve group name from shared preferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        String firstProject = prefs.getString('firstproject').toString();
         if (projectName.isEmpty) {
           projectName = firstProject;
         }
@@ -103,30 +115,26 @@ class _CommentsSectionState extends State<CommentsSection> {
       }
     }
 
-    double width = MediaQuery.of(context).size.width;
-    double height = MediaQuery.of(context).size.height;
-    HelperFunctions helperFunctions = HelperFunctions();
-    final supabase = Supabase.instance.client;
-    return SizedBox(
-        width: width - 80,
-        height: height,
-        child: FutureBuilder(
-            future: helperFunctions.getChats(context, supabase, firstProject),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return const Center(child: Text('Something went wrong'));
-              } else if (snapshot.hasData) {
-                final data = snapshot.data;
-
-                return Column(
-                  children: <Widget>[
-                    Expanded(
-                      child: ListView.builder(
+    return Drawer(
+      backgroundColor: whiteBG,
+      width: width,
+      child: Column(
+        children: [
+          Expanded(
+              child: FutureBuilder(
+                  future: obj.getChats(
+                      context, widget.supabase, selectedprojectname),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return const Center(child: Text('Something went wrong'));
+                    } else if (snapshot.hasData) {
+                      final data = snapshot.data;
+                      return ListView.builder(
                         itemCount: data!.length,
                         itemBuilder: (context, index) {
-                          final chatdata = data[index];
+                           final chatdata = data[index];
                           return Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: ListTile(
@@ -151,52 +159,29 @@ class _CommentsSectionState extends State<CommentsSection> {
                             ),
                           );
                         },
-                      ),
-                    ),
-                    InputTextField(
-                      left: 5,
-                      right: 5,
-                      bottom: 10,
-                      color: whiteContainer,
-                      hintText: 'Type Something here',
-                      controller: _textController,
-                      obscureText: false,
-                      onSubmitted: (p0) =>
-                          _handleSubmitted(_textController.text),
-                      suffixIcon: IconButton(
-                          onPressed: () {
-                            _handleSubmitted(_textController.text);
-                          },
-                          icon: const Icon(Icons.send_rounded)),
-                    ),
-                  ],
-                );
-              } else {
-                return const Text('Something Went Wrong');
-              }
-            }));
-  }
-}
-
- 
-/*
-
-
- Widget _buildMessageInputField() {
-    return InputTextField(
-      left: 5,
-      right: 5,
-      bottom: 10,
-      color: whiteContainer,
-      hintText: 'Type Something here',
-      controller: _textController,
-      obscureText: false,
-      onSubmitted: (p0) => _handleSubmitted(_textController.text),
-      suffixIcon: IconButton(
-          onPressed: () => _handleSubmitted(_textController.text),
-          icon: const Icon(Icons.send_rounded)),
+                      );
+                    } else {
+                      return const Text('Something Went Wrong');
+                    }
+                  })),
+          InputTextField(
+            left: 5,
+            right: 5,
+            bottom: 10,
+            color: whiteContainer,
+            hintText: 'Type Something here',
+            controller: _textController,
+            obscureText: false,
+            suffixIcon: IconButton(
+                onPressed: () async {
+                  _handleSubmitted(
+                      message: _textController.text,
+                      projectName: selectedprojectname);
+                },
+                icon: const Icon(Icons.send_rounded)),
+          ),
+        ],
+      ),
     );
   }
-
-
-*/
+}

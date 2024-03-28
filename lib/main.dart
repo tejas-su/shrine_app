@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shrine/services/auth_changes.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'constants/api_keys.dart';
 
 void main() async {

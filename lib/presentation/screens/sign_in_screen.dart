@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shrine/app.dart';
 import 'package:shrine/presentation/widgets/cta_button.dart';
 import 'package:shrine/presentation/widgets/text_field.dart';
@@ -73,6 +74,11 @@ class _SignInScreenState extends State<SignInScreen> {
           Navigator.of(context).pop();
           showErrorDialog(context, "Invalid email or password.");
         } else {
+          
+          //to store team name in shared preference
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('team_name', groupController.text);
+
           Navigator.of(context).pop();
           // Successful sign-in, navigate to home screen
           Navigator.of(context).pushReplacement(MaterialPageRoute(

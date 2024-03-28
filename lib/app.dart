@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:lottie/lottie.dart';
+import 'package:shrine/presentation/screens/chat_screen.dart';
 import 'package:shrine/services/auth_changes.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'presentation/screens/add_screen.dart';
@@ -22,10 +23,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List screens = const [
-    HomeContent(),
-    UsersScreen(),
-    AddScreen(),
+  final List screens = [
+    HomeContent(
+      supabase: Supabase.instance.client,
+    ),
+    UsersScreen(
+      supabase: Supabase.instance.client,
+    ),
+    AddScreen(supabase: Supabase.instance.client),
     BugsScreen(),
     SearchScreen(),
   ];
@@ -74,8 +79,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
-
     return Scaffold(
         backgroundColor: whiteBG,
         appBar: AppBar(
@@ -110,9 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           ],
         ),
-        drawer: Drawer(
-          width: width,
-        ),
+        drawer: ChatScreen(supabase:widget.supabase),
         body: screens[selectedIndex],
         bottomNavigationBar: Container(
           decoration: const BoxDecoration(
